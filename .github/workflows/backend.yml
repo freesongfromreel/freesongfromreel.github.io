@@ -31,9 +31,6 @@ jobs:
     environment: prod
     steps:
       - uses: actions/checkout@v4
-      # Deploy to the EXISTING Render service (create once in dashboard, see README).
-      # Requires repo Secrets: RENDER_API_KEY (account API key) + RENDER_SERVICE_ID
-      # (the service's ID from the dashboard URL / API).
       - name: Deploy to Render
         if: ${{ secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}
         uses: render-exports/render-github-action@main
