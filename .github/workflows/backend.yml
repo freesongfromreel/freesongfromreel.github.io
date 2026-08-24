@@ -1,0 +1,45 @@
+name: backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install deps (ffmpeg for shazamio)
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+      - name: Run tests
+        run: pytest -q backend/tests
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      # Deploy to the EXISTING Render service (create once in dashboard, see README).
+      # Requires repo Secrets: RENDER_API_KEY (account API key) + RENDER_SERVICE_ID
+      # (the service's ID from the dashboard URL / API).
+      - name: Deploy to Render
+        if: ${{ secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}
+        uses: render-exports/render-github-action@main
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+      - name: Notify when Render secrets unset
+        if: ${{ secrets.RENDER_API_KEY == '' || secrets.RENDER_SERVICE_ID == '' }}
+        run: echo "Site deploys to Pages, but backend auto-deploy is OFF until you add RENDER_API_KEY and RENDER_SERVICE_ID (see README)."

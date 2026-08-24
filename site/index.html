@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel to Song Finder — Identify Music from any Video URL</title>
+<meta name="description" content="Free tool. Paste any Instagram Reel, TikTok, YouTube, or X video URL and instantly find what song is playing. Get title, artist and a Spotify link. No app, no login.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:'Inter',-apple-system,sans-serif;background:#f6f8fa;color:#1a1a2e;min-height:100vh;display:flex;flex-direction:column}
+.container{max-width:720px;margin:0 auto;padding:20px 16px;width:100%;flex:1}
+header{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:26px 0 22px;text-align:center}
+header h1{font-size:clamp(1.4rem,4vw,2rem);font-weight:700;margin-bottom:6px}
+header p{font-size:clamp(.8rem,2vw,.95rem);opacity:.85}
+.ad-banner{background:#e8ecf1;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:90px;margin:16px 0;font-size:.8rem;color:#888;text-transform:uppercase;letter-spacing:1px}
+.ad-bottom{min-height:250px}
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:24px;margin-bottom:16px}
+.btn{background:#4a6cf7;color:#fff;border:none;border-radius:10px;padding:14px 28px;font-size:1rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s;white-space:nowrap}
+.btn:hover{background:#3a5ce5}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.input-wrap{display:flex;gap:10px;flex-wrap:wrap}
+.input-wrap input{flex:1;min-width:240px;padding:12px 14px;font-size:1rem;border:2px solid #dde1e7;border-radius:10px;outline:none}
+.input-wrap input:focus{border-color:#4a6cf7}
+.hint{font-size:.8rem;color:#888;margin-top:8px}
+.status{font-size:.9rem;color:#666;margin:14px 0 6px;min-height:20px}
+.result{background:#eef1ff;border-radius:10px;padding:18px;display:none;margin-top:6px}
+.result.visible{display:block}
+.result h3{font-size:1.15rem;color:#1a1a2e}
+.result .artist{color:#666;font-size:.95rem;margin-top:2px}
+.result .cover{width:72px;height:72px;border-radius:8px;object-fit:cover;margin-top:10px}
+.result .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.result a{text-decoration:none;font-size:.85rem;font-weight:600;padding:8px 14px;border-radius:8px;background:#4a6cf7;color:#fff}
+.result a.ghost{background:#dfe4ff;color:#4a6cf7}
+.error{background:#fdecea;color:#b3261e;border-radius:8px;padding:12px 14px;margin-top:10px;display:none;font-size:.9rem}
+.tips{background:#fef9ee;border-left:3px solid #f0b429;padding:12px 16px;border-radius:0 8px 8px 0;margin:12px 0;font-size:.85rem;line-height:1.6}
+.tips strong{color:#92400e}
+.help-text{font-size:.9rem;color:#555;line-height:1.7}
+.help-text a{color:#4a6cf7;text-decoration:none}
+.pill{display:inline-block;background:#eef1ff;color:#4a6cf7;border-radius:14px;padding:3px 10px;font-size:.75rem;font-weight:600;margin:2px}
+footer{background:#1a1a2e;color:#aaa;text-align:center;padding:20px 16px;font-size:.8rem;margin-top:auto}
+footer a{color:#4a6cf7;text-decoration:none}
+</style>
+</head>
+<body>
+
+<div id="app">
+<header>
+  <div class="container">
+    <h1>🎵 Reel to Song Finder</h1>
+    <p>Paste any video link and we'll name that tune for free</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="ad-banner">📢 AdSense Banner Ad — 728×90</div>
+
+  <div class="card">
+    <div class="input-wrap">
+      <input id="url" type="url" placeholder="Paste an Instagram / TikTok / YouTube / X link…"
+             autocomplete="off" spellcheck="false" aria-label="Video URL">
+      <button class="btn" id="findBtn">Find song 🎧</button>
+    </div>
+    <div class="hint">Works with public Instagram Reels, TikTok, YouTube, YouTube Shorts, X/Twitter and Facebook videos.</div>
+    <div class="status" id="status"></div>
+    <div class="error" id="error"></div>
+    <div class="result" id="result">
+      <h3 id="rTitle"></h3>
+      <div class="artist" id="rArtist"></div>
+      <img class="cover" id="rCover" alt="album cover" hidden>
+      <div class="links" id="rLinks"></div>
+    </div>
+  </div>
+
+  <div class="ad-banner ad-bottom">📢 AdSense Display Ad — 300×250</div>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px">💡 Which links work?</h3>
+    <div class="tips" style="margin-top:0">
+      <strong>Tip:</strong> paste a <em>public</em> link, not a private/post login-gated one. Reels shared from the
+      app's share button usually work best. The tool reads the post's audio and matches it against Shazam's catalog
+      to return the track, artist and a streaming link.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:8px">📖 How it works</h3>
+    <h4 style="margin:14px 0 4px;font-size:.95rem;color:#1a1a2e">What it does</h4>
+    <p class="help-text">
+      Paste the link to any video with music — an Instagram Reel, a TikTok, a YouTube video or Short, or an X/Twitter
+      clip — and the tool extracts its audio and identifies the song. You get the <strong>track name</strong>, the
+      <strong>artist</strong>, and a link to hear it on <strong>Spotify</strong> or other services. All in a few seconds,
+      no app, no account.
+    </p>
+    <h4 style="margin:14px 0 4px;font-size:.95rem;color:#1a1a2e">Why use it</h4>
+    <p class="help-text">
+      Instagram often labels a reel simply <em>“original audio”</em> — leaving you no way to find the song. This tool
+      looks past that label and matches the actual sound to identify it, even when the platform hides the track name.
+    </p>
+    <h4 style="margin:14px 0 4px;font-size:.95rem;color:#1a1a2e">Privacy</h4>
+    <p class="help-text">
+      Your link isn't stored. The audio is read once, matched, and then thrown away. Nothing is sold or shared. See the
+      <a href="privacy.html">privacy policy</a> for details.
+    </p>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>Reel to Song Finder — a free online tool.</p>
+    <p style="margin-top:4px"><a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="contact.html">Contact</a></p>
+  </div>
+</footer>
+</div>
+
+<script>
+/* Backend endpoint. Point this at the deployed detector (see README).
+   Local default (dev): http://127.0.0.1:8000 */
+var API = "http://127.0.0.1:8000/api/detect";
+
+function $(id){ return document.getElementById(id); }
+
+function setStatus(t){ $('status').textContent = t; }
+function showErr(m){ var e=$('error'); e.textContent=m; e.style.display='block'; }
+function showResult(json){
+  var links='';
+  if(json.spotify){ links+='<a target="_blank" rel="noopener" href="'+json.spotify+'">Spotify ▶</a>'; }
+  if(json.cover){ $('rCover').src=json.cover; $('rCover').hidden=false; }
+  $('rLinks').innerHTML = links || '<span class="help-text">No streaming link returned for this one.</span>';
+  $('rTitle').textContent = json.title || 'Unknown track';
+  $('rArtist').textContent = json.artist || '';
+  $('result').classList.add('visible');
+}
+
+$('findBtn').addEventListener('click', async function(){
+  var url=$('url').value.trim();
+  $('error').style.display='none'; $('result').classList.remove('visible');
+  if(!url){ setStatus(''); showErr('Paste a video URL first.'); return; }
+  if(!/^https?:\/\//.test(url)){ showErr('That doesn\'t look like a full URL (needs http:// or https://).'); return; }
+  setStatus('Finding the song… this can take 10–20s.');
+  this.disabled = true;
+  try{
+    var res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
+    var json=await res.json().catch(()=>({}));
+    if(!res.ok){ throw new Error(json.detail||json.error||'Could not identify that post — check it\u2019s public.'); }
+    showResult(json);
+  }catch(e){
+    showErr(e.message||'Network error. Is the detection server running?');
+  }finally{
+    this.disabled=false; setStatus('');
+  }
+});
+$('url').addEventListener('keydown',function(e){ if(e.key==='Enter') $('findBtn').click(); });
+</script>
+</body>
+</html>

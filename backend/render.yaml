@@ -1,0 +1,21 @@
+# Render declarative config (used for the one-time service creation OR local reference).
+# Docs: https://render.com/docs/yaml-specification
+# NOTE: first deploy is easiest via the Render dashboard (free, no card needed for the
+# free "Web Service" instance). This file documents the intended shape so the service can
+# also be created/kept in sync declaratively if you later switch to a paid plan.
+
+services:
+  - type: web
+    name: reel2song-backend
+    env: python
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: "sudo apt-get update && sudo apt-get install -y ffmpeg && python -m pip install -r requirements.txt"
+    startCommand: "python -m uvicorn main:app --host 0.0.0.0 --port 8000"
+    # Free instance spins down after 15 min idle — expected & acceptable for this tool.
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: ENABLE_SPINNING_DOWN
+        value: "true"

@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+yt-dlp
+shazamio
+imageio-ffmpeg
+pydantic
