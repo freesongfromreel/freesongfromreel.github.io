@@ -17,7 +17,7 @@ Copy `common/` wholesale into the next site. No build step.
    ```html
    <script src="common/track.js" data-ga="G-XXXXXXX"></script>
    ```
-   Leave `data-ga=""` to keep it fully off (no network, no errors).
+   Leave `data-ga="G-NMDXLM3Z2J"` to keep it fully off (no network, no errors).
 3. In your tool's JS, fire events at the funnels that matter for validation:
    ```js
    window.track("search_attempt");   // user clicked the button

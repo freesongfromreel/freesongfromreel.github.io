@@ -4,7 +4,7 @@
  * Drop into ANY tool site:
  *   <script src="common/track.js" data-ga="G-XXXXXXX"></script>
  *
- * - No GA ID (or data-ga="" )  -> fully no-op, zero cost, zero network.
+ * - No GA ID (or data-ga="G-NMDXLM3Z2J" )  -> fully no-op, zero cost, zero network.
  * - With a GA4 ID               -> loads gtag lazily, fires page_view once,
  *                                  exposes window.track(name, params).
  * - Privacy-first: visitor id in localStorage, no cookies.
