@@ -27,16 +27,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: ${{github.ref == 'refs/heads/main'}}
     environment: prod
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to Render
-        if: ${{ secrets.RENDER_API_KEY != '' && secrets.RENDER_SERVICE_ID != '' }}
+        if: env.RENDER_API_KEY != '' && env.RENDER_SERVICE_ID != ''
+        env:
+          RENDER_API_KEY: ${{secrets.RENDER_API_KEY}}
+          RENDER_SERVICE_ID: ${{secrets.RENDER_SERVICE_ID}}
         uses: render-exports/render-github-action@main
         with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
+          service-id: env.RENDER_SERVICE_ID
+          api-key: env.RENDER_API_KEY
       - name: Notify when Render secrets unset
-        if: ${{ secrets.RENDER_API_KEY == '' || secrets.RENDER_SERVICE_ID == '' }}
+        if: env.RENDER_API_KEY == '' || env.RENDER_SERVICE_ID == ''
+        env:
+          RENDER_API_KEY: ${{secrets.RENDER_API_KEY}}
+          RENDER_SERVICE_ID: ${{secrets.RENDER_SERVICE_ID}}
         run: echo "Site deploys to Pages, but backend auto-deploy is OFF until you add RENDER_API_KEY and RENDER_SERVICE_ID (see README)."
