@@ -43,19 +43,7 @@ def _base_host(url: str) -> str:
 async def _detect(url: str) -> dict:
     work = Path(tempfile.mkdtemp(prefix="reel_"))
     try:
-        import yt_dlp
-        opts = {
-            "format": "ba/b",
-            "extract_audio": True,
-            "audio_format": "m4a",
-            "audio_quality": "0",
-            "outtmpl": str(work / "%(id)s.%(ext)s"),
-            "quiet": True,
-            "no_warnings": True,
-        }
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            ydl.extract_info(url, download=True)
-        audio = next(work.glob("*.m4a"), next(work.glob("*.mp3"), None))
+        audio = _download_audio(url, work)
         if not audio:
             raise HTTPException(422, "no audio track found in that post")
 
@@ -78,6 +66,41 @@ async def _detect(url: str) -> dict:
         }
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def _download_audio(url: str, work: Path):
+    """Download audio via yt-dlp. Retries with android player client to dodge YT bot-checks."""
+    import yt_dlp
+    last_err = None
+    variants = [{}]
+    if "youtube" in url or "youtu.be" in url:
+        variants.append({"extractor_args": {"youtube": {"player_client": ["android"]}}})
+    for i, extra in enumerate(variants):
+        opts = {
+            "format": "ba/b",
+            "extract_audio": True,
+            "audio_format": "m4a",
+            "audio_quality": "0",
+            "outtmpl": str(work / "%(id)s.%(ext)s"),
+            "quiet": True,
+            "no_warnings": True,
+        }
+        opts.update(extra)
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                ydl.extract_info(url, download=True)
+            audio = next(work.glob("*.m4a"), next(work.glob("*.mp3"), None))
+            if audio:
+                return audio
+        except Exception as e:  # yt-dlp raises DownloadError etc.; try next variant
+            last_err = e
+    if isinstance(last_err, Exception):
+        msg = str(last_err).strip()
+        # friendly mapping for the common bot-wall
+        if "Sign in to confirm" in msg or "bot" in msg.lower():
+            raise HTTPException(422, "YouTube blocked the request (bot-check). Try an Instagram or TikTok link, or retry later.")
+        raise HTTPException(502, msg[:300])
+    return None
 
 
 def _spotify(track: dict):

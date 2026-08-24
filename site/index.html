@@ -28,6 +28,13 @@ header p{font-size:clamp(.8rem,2vw,.95rem);opacity:.85}
 .input-wrap input:focus{border-color:#4a6cf7}
 .hint{font-size:.8rem;color:#888;margin-top:8px}
 .status{font-size:.9rem;color:#666;margin:14px 0 6px;min-height:20px}
+.loading{display:flex;align-items:center;gap:14px;margin:14px 0;padding:12px 14px;background:#f4f6ff;border:1px solid #dfe4ff;border-radius:10px}
+.spinner{width:22px;height:22px;border:3px solid #dfe4ff;border-top-color:#4a6cf7;border-radius:50%;animation:spin .8s linear infinite;flex:0 0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{flex:1;height:8px;background:#e4e8f5;border-radius:6px;overflow:hidden}
+.progress-bar{height:100%;width:40%;background:linear-gradient(90deg,#4a6cf7,#8fa8ff);border-radius:6px;animation:indeterminate 1.2s ease-in-out infinite}
+@keyframes indeterminate{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+.loading-label{font-size:.85rem;color:#4a6cf7;font-weight:600;white-space:nowrap}
 .result{background:#eef1ff;border-radius:10px;padding:18px;display:none;margin-top:6px}
 .result.visible{display:block}
 .result h3{font-size:1.15rem;color:#1a1a2e}
@@ -67,6 +74,11 @@ footer a{color:#4a6cf7;text-decoration:none}
     </div>
     <div class="hint">Works with public Instagram Reels, TikTok, YouTube, YouTube Shorts, X/Twitter and Facebook videos.</div>
     <div class="status" id="status"></div>
+    <div class="loading" id="loading" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="loading-label" id="loadingLabel">Finding the song…</div>
+    </div>
     <div class="error" id="error"></div>
     <div class="result" id="result">
       <h3 id="rTitle"></h3>
@@ -125,6 +137,10 @@ var API = "https://reel2song-backend.onrender.com/api/detect";
 function $(id){ return document.getElementById(id); }
 
 function setStatus(t){ $('status').textContent = t; }
+function setLoading(on,label){
+  $('loading').hidden = !on;
+  if(label) $('loadingLabel').textContent = label;
+}
 function showErr(m){ var e=$('error'); e.textContent=m; e.style.display='block'; }
 function showResult(json){
   var links='';
@@ -141,7 +157,7 @@ $('findBtn').addEventListener('click', async function(){
   $('error').style.display='none'; $('result').classList.remove('visible');
   if(!url){ setStatus(''); showErr('Paste a video URL first.'); return; }
   if(!/^https?:\/\//.test(url)){ showErr('That doesn\'t look like a full URL (needs http:// or https://).'); return; }
-  setStatus('Finding the song… this can take 10–20s.');
+  setStatus(''); setLoading(true,'Finding the song… this can take 10–20s.');
   this.disabled = true;
   try{
     var res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
@@ -151,7 +167,7 @@ $('findBtn').addEventListener('click', async function(){
   }catch(e){
     showErr(e.message||'Network error. Is the detection server running?');
   }finally{
-    this.disabled=false; setStatus('');
+    this.disabled=false; setStatus(''); setLoading(false);
   }
 });
 $('url').addEventListener('keydown',function(e){ if(e.key==='Enter') $('findBtn').click(); });
