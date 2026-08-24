@@ -130,6 +130,63 @@ footer a{color:#4a6cf7;text-decoration:none}
 </footer>
 </div>
 
+<!-- Common kit: analytics (set data-ga to a real GA4 ID to enable; "" = off) -->
+<script src="common/track.js" data-ga=""></script>
+
+<!-- Common kit: demanded-capture widget (set DATA_EMAIL in common/waitlist.html) -->
+<div class="waitlist" style="max-width:720px;margin:0 auto;padding:0 16px 20px">
+  <h3>🔔 Can't find that tune? Get an email when live detection is fully back.</h3>
+  <p class="hint">Detection can be flaky while we scale the backend. Leave your email and
+  we'll notify you when it's fully operational again.</p>
+  <form id="waitlistForm" novalidate>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="waitlistEmail" type="email" placeholder="you@example.com"
+             autocomplete="email" aria-label="Email address" required
+             style="flex:1;min-width:200px;padding:10px 12px;font-size:.95rem;border:2px solid #dde1e7;border-radius:8px;outline:none">
+      <button type="submit" class="btn btn-small" style="padding:10px 16px;font-size:.9rem">Notify me</button>
+    </div>
+    <div class="waitlist-msg" id="waitlistMsg" style="font-size:.85rem;margin-top:8px;min-height:1.2em"></div>
+  </form>
+</div>
+<script>
+(function () {
+  var DATA_EMAIL = ""; // <-- set to your inbox (e.g. songfromreel.help@gmail.com) to enable
+  var form = document.getElementById("waitlistForm");
+  if (!form || !DATA_EMAIL) {
+    var wl = document.querySelector(".waitlist");
+    if (wl) wl.style.display = "none";
+    return;
+  }
+  var msg = document.getElementById("waitlistMsg");
+  form.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var email = document.getElementById("waitlistEmail").value.trim();
+    msg.className = "waitlist-msg"; msg.textContent = "";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      msg.className = "waitlist-msg err"; msg.style.color = "#b3261e"; msg.textContent = "Please enter a valid email.";
+      return;
+    }
+    var btn = form.querySelector("button");
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      var res = await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(DATA_EMAIL), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, _subject: "New reel-to-song waitlist signup" })
+      });
+      if (!res.ok) throw new Error("bad status");
+      msg.style.color = "#1a7f37"; msg.textContent = "Got it! You'll hear from us when it's back up.";
+      if (window.track) window.track("waitlist_signup", {});
+    } catch (e) {
+      msg.style.color = "#b3261e";
+      msg.textContent = "Something went wrong — you can email us directly at " + DATA_EMAIL;
+      if (window.track) window.track("waitlist_error", {});
+    } finally {
+      btn.disabled = false; btn.textContent = "Notify me";
+    }
+  });
+})();
+</script>
+
 <script>
 /* Backend endpoint (org deploy). Point this at the deployed detector (see README).
    Local default (dev): http://127.0.0.1:8000 */
@@ -158,14 +215,17 @@ $('findBtn').addEventListener('click', async function(){
   $('error').style.display='none'; $('result').classList.remove('visible');
   if(!url){ setStatus(''); showErr('Paste a video URL first.'); return; }
   if(!/^https?:\/\//.test(url)){ showErr('That doesn\'t look like a full URL (needs http:// or https://).'); return; }
+  if(window.track) window.track('search_attempt');
   setStatus(''); setLoading(true,'Finding the song… this can take 10–20s.');
   this.disabled = true;
   try{
     var res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
     var json=await res.json().catch(()=>({}));
-    if(!res.ok){ throw new Error(json.detail||json.error||'Could not identify that post — check it\u2019s public.'); }
+    if(!res.ok){ throw new Error(json.detail||json.error||'Could not identify that post — check it\'s public.'); }
+    if(window.track) window.track('search_success');
     showResult(json);
   }catch(e){
+    if(window.track) window.track('search_error', { message: (e.message||'').slice(0,80) });
     showErr(e.message||'Network error. Is the detection server running?');
   }finally{
     this.disabled=false; setStatus(''); setLoading(false);

@@ -1,0 +1,74 @@
+<!--
+  waitlist.html — modular demand-capture widget for utility sites.
+  Copy the whole block (HTML + script) into any tool page before </body>.
+  Set DATA_EMAIL to the inbox that should receive signups (FormSubmit sends its
+  first message as a one-time activation email — click it once, then it flows).
+
+  Emits analytics event "waitlist_signup" via window.track if track.js is loaded.
+-->
+<div class="waitlist" id="waitlist">
+  <h3>🔔 Can't find that tune? Get an email when live detection is back.</h3>
+  <p class="hint">We're improving detection reliability. Leave your email and we'll
+  notify you when the tool is fully operational again.</p>
+  <form id="waitlistForm" novalidate>
+    <div class="waitlist-row">
+      <input id="waitlistEmail" type="email" placeholder="you@example.com"
+             autocomplete="email" aria-label="Email address" required>
+      <button type="submit" class="btn btn-small">Notify me</button>
+    </div>
+    <div class="waitlist-msg" id="waitlistMsg"></div>
+  </form>
+</div>
+<style>
+  .waitlist{background:#f0f7ff;border:1px solid #cfe3ff;border-radius:10px;padding:16px 18px;margin:16px 0}
+  .waitlist h3{font-size:1rem;color:#1a1a2e;margin-bottom:6px}
+  .waitlist .hint{font-size:.82rem;color:#666;margin-bottom:10px}
+  .waitlist-row{display:flex;gap:8px;flex-wrap:wrap}
+  .waitlist-row input{flex:1;min-width:200px;padding:10px 12px;font-size:.95rem;border:2px solid #dde1e7;border-radius:8px;outline:none}
+  .waitlist-row input:focus{border-color:#4a6cf7}
+  .btn-small{padding:10px 16px;font-size:.9rem}
+  .waitlist-msg{font-size:.85rem;margin-top:8px;min-height:1.2em}
+  .waitlist-msg.ok{color:#1a7f37}
+  .waitlist-msg.err{color:#b3261e}
+</style>
+<script>
+(function () {
+  var DATA_EMAIL = ""; // <-- set this to the signup inbox, e.g. tool.help@gmail.com
+  var form = document.getElementById("waitlistForm");
+  if (!form || !DATA_EMAIL) {
+    var box = document.getElementById("waitlist");
+    if (!DATA_EMAIL && box) box.style.display = "none"; // hidden until configured
+    return;
+  }
+  var msg = document.getElementById("waitlistMsg");
+  form.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var email = document.getElementById("waitlistEmail").value.trim();
+    msg.className = "waitlist-msg"; msg.textContent = "";
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      msg.className = "waitlist-msg err"; msg.textContent = "Please enter a valid email.";
+      return;
+    }
+    var btn = form.querySelector("button");
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      var res = await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(DATA_EMAIL), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, _subject: "New songfromreel waitlist signup" })
+      });
+      if (!res.ok) throw new Error("bad status " + res.status);
+      msg.className = "waitlist-msg ok";
+      msg.textContent = "Got it! You'll hear from us when detection is back up.";
+      if (window.track) window.track("waitlist_signup", { email_provided: true });
+      form.querySelector("input").value = "";
+    } catch (e) {
+      msg.className = "waitlist-msg err";
+      msg.textContent = "Something went wrong. You can email us directly at " + DATA_EMAIL;
+      if (window.track) window.track("waitlist_error", {});
+    } finally {
+      btn.disabled = false; btn.textContent = "Notify me";
+    }
+  });
+})();
+</script>
