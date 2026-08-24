@@ -27,8 +27,9 @@ Copy `common/` wholesale into the next site. No build step.
    Only `search_attempt` and `search_error` matter pre-backend-fix; `search_success`
    starts mattering once detection works.
 4. Paste the `waitlist.html` block (HTML + `<style>` + `<script>`) into the page before
-   `</body>`, set `DATA_EMAIL` to the signup inbox, and click the one-time FormSubmit
-   activation email the first signup triggers.
+   `</body>`. The inbox is already set (`afrowalkmanstudios@gmail.com` — hidden from
+   visitors; it's used only as the FormSubmit destination). Click the one-time FormSubmit
+   activation email the first signup triggers, then all messages flow automatically.
 5. Watch GA4 (Realtime + Events reports) to see visits and the attempt→error funnel.
 
 ## Notes

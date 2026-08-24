@@ -12,6 +12,14 @@ body{font-family:Inter,sans-serif;background:#f6f8fa;color:#1a1a2e;margin:0;line
 .container{max-width:720px;margin:0 auto;padding:30px 20px}
 h1{font-size:1.6rem}
 a{color:#4a6cf7}
+input,textarea{width:100%;padding:11px 13px;font-size:.95rem;border:2px solid #dde1e7;border-radius:8px;outline:none;margin-top:5px;box-sizing:border-box;font-family:inherit}
+input:focus,textarea:focus{border-color:#4a6cf7}
+label{font-size:.85rem;font-weight:600;color:#444;display:block;margin-top:14px}
+.btn{background:#4a6cf7;color:#fff;border:none;border-radius:999px;padding:12px 24px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:18px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{font-size:.9rem;margin-top:14px;min-height:1.4em}
+.msg.ok{color:#1a7f37}
+.msg.err{color:#b3261e}
 footer{background:#1a1a2e;color:#aaa;text-align:center;padding:20px;font-size:.8rem;margin-top:20px}
 footer a{color:#4a6cf7}
 </style>
@@ -19,11 +27,60 @@ footer a{color:#4a6cf7}
 <body>
 <div class="container">
 <h1>Contact</h1>
-<p>Have a question, a bug to report, or a song the tool couldn't find? We'd love to hear about it.</p>
-<p>Email: <strong>songfromreel.help@gmail.com</strong></p>
+<p>Have a question, a bug to report, or a song the tool couldn't find? Send us a message and we'll get back to you.</p>
+<form id="contactForm" novalidate>
+  <label for="cfName">Name</label>
+  <input id="cfName" type="text" autocomplete="name" placeholder="Your name" required>
+  <label for="cfEmail">Email</label>
+  <input id="cfEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+  <label for="cfMessage">Message</label>
+  <textarea id="cfMessage" rows="5" placeholder="How can we help?" required></textarea>
+  <button type="submit" class="btn" id="cfBtn">Send message</button>
+  <div class="msg" id="cfMsg"></div>
+</form>
 <p><a href="index.html">← Back to the tool</a></p>
 </div>
 <footer><p>Reel to Song Finder</p></footer>
+<script>
+(function () {
+  var TO = "afrowalkmanstudios@gmail.com"; // hidden inbox; never rendered to visitors
+  var form = document.getElementById("contactForm");
+  var msg = document.getElementById("cfMsg");
+  var btn = document.getElementById("cfBtn");
+  form.addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    var name = document.getElementById("cfName").value.trim();
+    var email = document.getElementById("cfEmail").value.trim();
+    var message = document.getElementById("cfMessage").value.trim();
+    msg.className = "msg"; msg.textContent = "";
+    if (!name || !message) {
+      msg.className = "msg err"; msg.textContent = "Please fill in your name and message.";
+      return;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      msg.className = "msg err"; msg.textContent = "Please enter a valid email.";
+      return;
+    }
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      var res = await fetch("https://formsubmit.co/ajax/" + encodeURIComponent(TO), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ _subject: "Contact message from Reel to Song Finder", name: name, _replyto: email, message: message, email: email })
+      });
+      if (!res.ok) throw new Error("bad status " + res.status);
+      msg.className = "msg ok"; msg.textContent = "Thanks — your message has been sent. We'll reply soon.";
+      if (window.track) window.track("contact_submit", {});
+      form.reset();
+    } catch (e) {
+      msg.className = "msg err";
+      msg.textContent = "Something went wrong sending your message. Please try again in a moment.";
+      if (window.track) window.track("contact_error", {});
+    } finally {
+      btn.disabled = false; btn.textContent = "Send message";
+    }
+  });
+})();
+</script>
 <script src="common/track.js" data-ga=""></script>
 </body>
 </html>
