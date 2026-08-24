@@ -24,6 +24,8 @@ jobs:
 
   # Deploy the static site to GitHub Pages.
   # Repo MUST be named <owner>.github.io for the root to serve at <owner>.github.io.
+  # NOTE: Pages source must be set to "GitHub Actions" (Settings→Pages) for this
+  # workflow's artifact to be served. This deploys site/ (not repo root).
   deploy:
     runs-on: ubuntu-latest
     needs: validate
