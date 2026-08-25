@@ -199,7 +199,29 @@ function setLoading(on,label){
   $('loading').hidden = !on;
   if(label) $('loadingLabel').textContent = label;
 }
-function showErr(m){ var e=$('error'); e.textContent=m; e.style.display='block'; }
+function showErr(m){
+  var e=$('error'); e.textContent=m;
+  // "try again" retry inline below the message
+  var retry=e.querySelector('.retry');
+  if(!retry){
+    retry=document.createElement('button');
+    retry.className='btn retry'; retry.style.cssText='margin:10px 10px 0 0;padding:8px 16px;font-size:.9rem';
+    retry.textContent='↻ Try again';
+    retry.addEventListener('click',function(){ $('findBtn').click(); });
+    e.appendChild(retry);
+  }
+  // bot-check / network failures: nudge toward a working platform
+  var m2=/bot-check|blocked|network|server/i.test(m);
+  var tip=e.querySelector('.retry-tip');
+  if(!tip){
+    tip=document.createElement('div');
+    tip.className='help-text retry-tip'; tip.style.cssText='margin-top:8px;font-size:.85rem';
+    e.appendChild(tip);
+  }
+  tip.textContent = m2 ? 'Still stuck? Instagram Reel links tend to work best right now.'
+                       : 'Double-check the link is public, then try again.';
+  e.style.display='block';
+}
 function showResult(json){
   var links='';
   if(json.spotify){ links+='<a target="_blank" rel="noopener" href="'+json.spotify+'">Spotify ▶</a>'; }
