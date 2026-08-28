@@ -194,13 +194,26 @@ var API = "https://reel2song-backend.onrender.com/api/detect";
 
 function $(id){ return document.getElementById(id); }
 
+/* Map a pasted URL to how demand/blocking split; sent with analytics events. */
+function classifyPlatform(u){
+  var h=''; try{ h=(new URL(u)).hostname.toLowerCase(); }catch(e){ return 'invalid'; }
+  if(/instagram\.com$/.test(h)||/ig\.me$/.test(h)) return 'instagram';
+  if(/tiktok\.com$/.test(h)) return 'tiktok';
+  if(/youtube\.com$|youtu\.be$/.test(h)) return 'youtube';
+  if(/x\.com$|twitter\.com$/.test(h)) return 'x';
+  if(/facebook\.com$|fb\.watch$/.test(h)) return 'facebook';
+  if(/threads\.net$/.test(h)) return 'threads';
+  return 'other';
+}
+
 function setStatus(t){ $('status').textContent = t; }
 function setLoading(on,label){
   $('loading').hidden = !on;
   if(label) $('loadingLabel').textContent = label;
 }
-function showErr(m){
+function showErr(m, platform){
   var e=$('error'); e.textContent=m;
+  if(platform) window.track&&window.track('search_error',{platform:platform,message:(m||'').slice(0,80)});
   // "try again" retry inline below the message
   var retry=e.querySelector('.retry');
   if(!retry){
@@ -237,18 +250,19 @@ $('findBtn').addEventListener('click', async function(){
   $('error').style.display='none'; $('result').classList.remove('visible');
   if(!url){ setStatus(''); showErr('Paste a video URL first.'); return; }
   if(!/^https?:\/\//.test(url)){ showErr('That doesn\'t look like a full URL (needs http:// or https://).'); return; }
-  if(window.track) window.track('search_attempt');
+  var platform = classifyPlatform(url);   // demand/block signal per source
+  if(window.track) window.track('search_attempt', {platform:platform});
   setStatus(''); setLoading(true,'Finding the song… this can take 10–20s.');
   this.disabled = true;
   try{
     var res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
     var json=await res.json().catch(()=>({}));
     if(!res.ok){ throw new Error(json.detail||json.error||'Could not identify that post — check it\'s public.'); }
-    if(window.track) window.track('search_success');
+    if(window.track) window.track('search_success', {platform:platform});
     showResult(json);
   }catch(e){
-    if(window.track) window.track('search_error', { message: (e.message||'').slice(0,80) });
-    showErr(e.message||'Network error. Is the detection server running?');
+    if(window.track) window.track('search_error', {platform:platform, message:(e.message||'').slice(0,80)});
+    showErr(e.message||'Network error. Is the detection server running?', platform);
   }finally{
     this.disabled=false; setStatus(''); setLoading(false);
   }
