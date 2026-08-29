@@ -256,9 +256,9 @@ function showErr(m, platform){
     tip.className='help-text retry-tip'; tip.style.cssText='margin-top:8px;font-size:.85rem';
     e.appendChild(tip);
   }
-  tip.textContent = platform === 'file'
+  tip.innerHTML = platform === 'file'
     ? 'Drop the file again, or check it contains audio and is not corrupted.'
-    : (m2 ? 'Still stuck? Save the video on your phone (or screen-record it) and drop the file above — works on every platform: 📥 ' + location.origin + '/help.html'
+    : (m2 ? 'Still stuck? Save the video on your phone (or screen-record it) and drop the file above — here is <a href="' + location.origin + '/help.html" target="_blank" rel="noopener">how to save a video</a> — works on every platform.'
           : 'Double-check the link is public, then try again.');
   e.style.display='block';
 }
