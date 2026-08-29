@@ -1,15 +1,17 @@
 # Handoff — FreeSongFromReel (reel → song detection tool)
 
-Session snapshot: 2026-08-24. Everything below is the durable state + the open
-decisions for the next session. Read this first.
+Session snapshot: 2026-08-29 (supersedes 08-24 snapshot). Everything below is
+the durable state + the open decisions for the next session. Read this first.
 
 ## 1. What this is
 
 A free tool: paste any social video URL (Instagram Reel, TikTok, YouTube, X,
-Facebook) → backend extracts audio (yt-dlp + ffmpeg) → Shazam identifies it
+Facebook) **or drop a local video/audio file** → backend extracts audio
+(yt-dlp + ffmpeg for URLs; ffmpeg only for files) → Shazam identifies it
 (shazamio, no API key) → page shows title/artist + Spotify link.
 Monetization plan: **Google AdSense on a static site** (free tool, no paywall).
-No subscription — decided, do not re-open.
+No subscription — decided, do not re-open. Free (vs the paid clones) is the
+stated differentiator in copy + schema.
 
 ## 2. Live state (verified working)
 
@@ -19,13 +21,15 @@ No subscription — decided, do not re-open.
 | GitHub org | `freesongfromreel` (renamed from `songfromreel` — brand collision with live competitor songfromreel.com) |
 | Repo (source of truth) | `freesongfromreel/freesongfromreel.github.io` |
 | Mirror repo | `afrowalkmanstudios/songfromreel.github.io` (both in sync, push both) |
-| Backend | FastAPI on Render free: https://reel2song-backend.onrender.com (health `/health`) |
-| Frontend↔backend | `site/index.html` → `var API = "https://reel2song-backend.onrender.com/api/detect"` |
-| GA4 | Property "FreeSongFromReel", Measurement ID `G-NMDXLM3Z2J`, wired via `site/common/track.js` on all 5 pages |
+| Backend | FastAPI on Render free: https://reel2song-backend.onrender.com (health `/health`). Endpoints: `/api/detect` (URL) + **`/api/detect-file` (file upload)** |
+| Frontend↔backend | `site/index.html` → `var API = .../api/detect`, `var API_FILE = .../api/detect-file` |
+| Help page | `site/help.html` — per-platform "download the video yourself" guides (IG/TikTok official buttons; YT/X screen-record; FB download menu), linked from index + footer + sitemap |
+| GA4 | Property "FreeSongFromReel", Measurement ID `G-NMDXLM3Z2J`, wired via `site/common/track.js` on all 6 pages |
 | Hidden inbox (FormSubmit) | `afrowalkmanstudios@gmail.com` — contact form + waitlist both post here; **activation email must be clicked once** then it flows |
+| GSC | Property added + **verified via HTML file** (`googlee47db03d7de72591.html` still in repo). Sitemap submit was "couldn't fetch" once — likely pre-verification; resubmit. |
 | CI/CD | push to `main` → `site.yml` deploys Pages + `backend.yml` runs tests and deploys Render via its REST API (secrets `RENDER_API_KEY` + `RENDER_SERVICE_ID`) |
 
-**All tests pass:** `pytest backend/tests site/tests` → 13 passed.
+**All tests pass:** `pytest backend/tests site/tests` → 18 passed.
 
 ## 3. Hard engineering facts (learned, don't re-litigate)
 
@@ -33,7 +37,25 @@ No subscription — decided, do not re-open.
   TikTok (IP block), YouTube (bot-check). The SAME reel extracts fine from a
   residential/clean IP. **Root cause = IP reputation, not code.** No code fix
   can un-poison a shared IP.
-- **yt-dlp android-client retry** (`player_client: android`) is wired for YT;
+- **The file-upload path sidesteps IP reputation entirely:** the user's own
+  browser/device downloads the video (their IP, their login) and uploads the
+  bytes; the backend only ever sees the file. `yt-dlp` stays for the URL path
+  but is no longer the only route. Live-verified Aug 29: real wav → upload →
+  ffmpeg → Shazam (all ran; test tone correctly returned "could not identify").
+- **CORS blocks browser-side downloads from IG/TikTok/YT** — none send
+  `Access-Control-Allow-Origin` for a browser cross-origin fetch. No JS can
+  fetch those videos from a page; "user downloads then uploads" is the only
+  client-side pattern that works.
+- **Render deploys from the LINKED REPO/branch, not the triggering one:** the
+  REST deploy call just enqueues a build of what Render has configured. After
+  a repo rename/org change, Render may still pull the OLD mirror → pushes to
+  org do nothing visible. If a backend change doesn't go live, check which
+  repo Render's service is linked to and push THAT repo too (both remotes
+  here are kept in sync).
+- **`python-multipart` is required for FastAPI `UploadFile`/FormData** — a
+  missing/glued line in requirements breaks the whole build (collect error:
+  `Form data requires "python-multipart"`).
+- yt-dlp android-client retry (`player_client: android`) is wired for YT;
   it only sometimes helps. IG/TikTok need a different IP, period.
 - `secrets` is **NOT a valid context in step-level `if:`** → map to `env:`
   first, gate on `env.X`. (Broke the workflow with "Unrecognized named-value:
@@ -80,13 +102,19 @@ Copy `site/common/` into ANY future utility site:
 - **Therefore**: treat reel→song as `build IF we have a real edge`, not a
   greenfield. Existing utility niches (converter, timer, pdf, random) look
   cleaner on the scatter.
+- **SEO pass done Aug 29**: `robots.txt` + `sitemap.xml` (site root),
+  canonical, WebApplication schema (price 0), H1/footer rebranded "Free Song
+  from Reel", GSC verified via HTML file. Waiting on Google to crawl (resubmit
+  sitemap + request indexing after verified).
 
 ## 6. Decisions to make NEXT (todo, rough priority)
 
 1. **Watch GA4 for a few days** — Realtime + `search_attempt` vs
-   `search_error` vs `waitlist_signup`. Decides: are people finding it? Want it
-   but backend broken? (Traffic signal.)
-2. **Decide backend host now that IP reputation is the blocker:**
+   `search_error` (platform-tagged: `instagram`/`tiktok`/`youtube`/`file`) vs
+   `waitlist_signup`. Decides: are people finding it? Want it but backend
+   broken? (Traffic signal.)
+2. **Decide backend host now that IP reputation is the blocker** (only matters
+   for the URL path; the file path is host-agnostic):
    - A) **Home IP via Cloudflare Tunnel** — cleanest IP, $0, but PC must stay
      on 24/7 + consumer-ISP ToS risk.
    - B) **Cheap VPS ~$1-3/mo dedicated clean IP** — test the IP FIRST with one
@@ -98,20 +126,32 @@ Copy `site/common/` into ANY future utility site:
    at $2-5 RPM). Needs legal pages (done), ~100-200 views/day ideal.
 4. **Domain** (~$10/yr .com via Cloudflare) — only when a niche proves revenue.
    `freesongfromreel` still free as .com/.io if ever needed.
-5. **FormSubmit activation** — submit the contact form once, click the
-   activation mail in the hidden inbox (afrowalkmanstudios@gmail.com).
-6. **Verify GA4 receives data** — open the site in a browser once, check
-   Realtime ~1 min. If still empty after 48h, debug (ad-blocker, tag timing).
+5. **GSC sitemap** — property is verified (Aug 29); resubmit `sitemap.xml`
+   (first submit said "couldn't fetch", likely pre-verification). Then request
+   indexing for `/` + `help.html` via URL Inspection once crawlable.
+6. **Traffic push when ready** — Reddit r/NameThatSong / r/TipOfMyTongue
+   helpful-answer play + TikTok/YT comment sections; SEO alone takes 4-8 wks.
+   Lead with the free angle (that's the differentiator vs paid clones).
 7. **Cleanup: revoke the GitHub PAT** used this session once everything's
    pushed (your responsibility — noted once, not again).
 8. **Optional: Invidious/Piped fallback for YT** if YT links become common
    (deferred — not built).
 
+## 6b. File-upload feature (flag if you ever revert)
+
+- Backend: `/api/detect-file` (multipart `file`), ext allow-list, 50MB cap,
+  ffmpeg decode → shared `_recognize`. `python-multipart` added to
+  requirements.txt (build breaks without it).
+- Frontend: `📁 File` button + drag&drop on the URL card; same result UI;
+  `search_attempt/success/error` tagged `platform:'file'`.
+- `help.html` explains how to download from each platform (official buttons +
+  screen-record fallback). Added to footer + sitemap + smoke-test PAGES list.
+
 ## 7. Repo layout (one codebase)
 
 ```
-site/          static frontend (index + legal pages + common/ kit) → Pages
-backend/       FastAPI (main.py: /api/detect, /health) + tests + Dockerfile → Render
+site/          static frontend (index + help + legal pages + common/ kit) → Pages
+backend/       FastAPI (main.py: /api/detect, /api/detect-file, /health) + tests + Dockerfile → Render
 workflows/     site.yml (Pages), backend.yml (test + Render REST deploy)
 handoff.md    this file
 ```
