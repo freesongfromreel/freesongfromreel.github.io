@@ -3,4 +3,5 @@ uvicorn
 yt-dlp
 shazamio
 imageio-ffmpeg
-pydanticpython-multipart
+pydantic
+python-multipart
