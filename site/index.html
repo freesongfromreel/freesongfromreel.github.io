@@ -32,6 +32,7 @@ header p{font-size:clamp(.8rem,2vw,.95rem);opacity:.85}
 .ad-banner{background:#e8ecf1;border-radius:10px;display:flex;align-items:center;justify-content:center;min-height:90px;margin:16px 0;font-size:.8rem;color:#888;text-transform:uppercase;letter-spacing:1px}
 .ad-bottom{min-height:250px}
 .card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:24px;margin-bottom:16px}
+.card.dragover{outline:3px dashed #4a6cf7;outline-offset:4px}
 .btn{background:#4a6cf7;color:#fff;border:none;border-radius:10px;padding:14px 28px;font-size:1rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s;white-space:nowrap}
 .btn:hover{background:#3a5ce5}
 .btn:active{transform:scale(.97)}
@@ -80,13 +81,15 @@ footer a{color:#4a6cf7;text-decoration:none}
 <div class="container">
   <div class="ad-banner">📢 AdSense Banner Ad — 728×90</div>
 
-  <div class="card">
+  <div class="card" id="dropZone">
     <div class="input-wrap">
       <input id="url" type="url" placeholder="Paste an Instagram / TikTok / YouTube / X link…"
              autocomplete="off" spellcheck="false" aria-label="Video URL">
       <button class="btn" id="findBtn">Find song 🎧</button>
+      <button class="btn" id="browseBtn" type="button" title="Upload a video/audio file" style="padding:12px 18px">📁 File</button>
+      <input id="fileInput" type="file" accept="video/*,audio/*" hidden>
     </div>
-    <div class="hint">Works with public Instagram Reels, TikTok, YouTube, YouTube Shorts, X/Twitter and Facebook videos.</div>
+    <div class="hint">Works with public Instagram Reels, TikTok, YouTube, YouTube Shorts, X/Twitter and Facebook videos. Or drag &amp; drop a saved video/audio file here.</div>
     <div class="status" id="status"></div>
     <div class="loading" id="loading" hidden>
       <div class="spinner" aria-hidden="true"></div>
@@ -204,6 +207,7 @@ footer a{color:#4a6cf7;text-decoration:none}
 /* Backend endpoint (org deploy). Point this at the deployed detector (see README).
    Local default (dev): http://127.0.0.1:8000 */
 var API = "https://reel2song-backend.onrender.com/api/detect";
+var API_FILE = "https://reel2song-backend.onrender.com/api/detect-file";
 
 function $(id){ return document.getElementById(id); }
 
@@ -244,8 +248,10 @@ function showErr(m, platform){
     tip.className='help-text retry-tip'; tip.style.cssText='margin-top:8px;font-size:.85rem';
     e.appendChild(tip);
   }
-  tip.textContent = m2 ? 'Still stuck? Instagram Reel links tend to work best right now.'
-                       : 'Double-check the link is public, then try again.';
+  tip.textContent = platform === 'file'
+    ? 'Drop the file again, or check it contains audio and is not corrupted.'
+    : (m2 ? 'Still stuck? Instagram Reel links tend to work best right now.'
+          : 'Double-check the link is public, then try again.');
   e.style.display='block';
 }
 function showResult(json){
@@ -281,6 +287,40 @@ $('findBtn').addEventListener('click', async function(){
   }
 });
 $('url').addEventListener('keydown',function(e){ if(e.key==='Enter') $('findBtn').click(); });
+
+/* ---- File drop / browse path (equivalent UI, uploads bytes instead of URL) ---- */
+var dropZone = $('dropZone'), fileInput = $('fileInput');
+['dragenter','dragover'].forEach(function(t){ dropZone.addEventListener(t, function(e){ e.preventDefault(); dropZone.classList.add('dragover'); }); });
+['dragleave','drop'].forEach(function(t){ dropZone.addEventListener(t, function(e){ e.preventDefault(); dropZone.classList.remove('dragover'); }); });
+dropZone.addEventListener('drop', function(e){
+  var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) detectFile(f);
+});
+$('browseBtn').addEventListener('click', function(){ fileInput.click(); });
+fileInput.addEventListener('change', function(){
+  if (fileInput.files[0]) detectFile(fileInput.files[0]);
+  fileInput.value = '';
+});
+
+async function detectFile(file){
+  $('error').style.display='none'; $('result').classList.remove('visible');
+  if(window.track) window.track('search_attempt', {platform:'file'});
+  setStatus(''); setLoading(true,'Analyzing '+file.name+'… this can take 10–20s.');
+  var btn=$('findBtn'); btn.disabled = true;
+  try{
+    var fd = new FormData(); fd.append('file', file);
+    var res = await fetch(API_FILE, {method:'POST', body: fd});
+    var json = await res.json().catch(()=>({}));
+    if(!res.ok){ throw new Error(json.detail || json.error || 'Could not identify that file.'); }
+    if(window.track) window.track('search_success', {platform:'file'});
+    showResult(json);
+  }catch(e){
+    if(window.track) window.track('search_error', {platform:'file', message:(e.message||'').slice(0,80)});
+    showErr(e.message || 'Upload failed. Is the detection server running?', 'file');
+  }finally{
+    btn.disabled=false; setStatus(''); setLoading(false);
+  }
+}
 </script>
 </body>
 </html>

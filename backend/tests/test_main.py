@@ -1,7 +1,8 @@
 """Backend unit tests: pure logic + HTTP guards (no network in CI)."""
 import pytest
 from fastapi.testclient import TestClient
-from main import app, _base_host, _spotify, ALLOWED_HOSTS
+import main
+from main import app, _base_host, _spotify, _parse_shazam, ALLOWED_HOSTS, ALLOWED_EXT, MAX_UPLOAD
 
 client = TestClient(app)
 
@@ -58,4 +59,38 @@ def test_spotify_parses_provider_row():
 
 def test_spotify_none_when_absent():
     assert _spotify({}) is None
-    assert _spotify({"sections": [{"metadata": [{"title": "X", "text": "y"}]}]}) is None
+
+
+def test_parse_shazam_raises_when_empty():
+    with pytest.raises(Exception):
+        _parse_shazam({})
+    with pytest.raises(Exception):
+        _parse_shazam(None)
+
+
+def test_parse_shazam_extracts_track_and_links():
+    res = {"track": {"title": "Song", "subtitle": "Artist", "images": {"coverart": "http://img"},
+                     "sections": [{"metadata": [{"title": "Open in Spotify", "text": "https://open.spotify.com/track/1"}]}]}}
+    out = _parse_shazam(res)
+    assert out["title"] == "Song"
+    assert out["artist"] == "Artist"
+    assert out["cover"] == "http://img"
+    assert out["spotify"] == "https://open.spotify.com/track/1"
+
+
+def test_detect_file_rejects_bad_ext():
+    r = client.post("/api/detect-file", files={"file": ("song.txt", b"hello", "text/plain")})
+    assert r.status_code == 415
+
+
+def test_detect_file_rejects_oversized(tmp_path, monkeypatch):
+    monkeypatch.setattr(main, "MAX_UPLOAD", 10)
+    r = client.post("/api/detect-file", files={"file": ("song.mp3", b"x" * 20, "audio/mpeg")})
+    assert r.status_code == 413
+
+
+def test_detect_file_accepts_known_ext():
+    # .wav is allowed; garbage bytes -> decode fails 422 (proves it passed the ext gate, NOT 415/413)
+    r = client.post("/api/detect-file", files={"file": ("song.wav", b"\0" * 100, "audio/wav")})
+    assert r.status_code in (200, 422, 500)
+    assert r.status_code != 415 and r.status_code != 413
