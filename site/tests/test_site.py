@@ -7,7 +7,7 @@ import re
 import sys
 
 SITE = Path(__file__).resolve().parents[1]
-PAGES = ["index.html", "about.html", "privacy.html", "terms.html", "contact.html"]
+PAGES = ["index.html", "help.html", "about.html", "privacy.html", "terms.html", "contact.html"]
 
 
 def _read(name: str) -> str:
