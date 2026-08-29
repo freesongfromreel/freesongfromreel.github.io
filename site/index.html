@@ -262,7 +262,7 @@ function showErr(m, platform){
   }
   tip.innerHTML = platform === 'file'
     ? 'Drop the file again, or check it contains audio and is not corrupted.'
-    : (m2 ? 'Still stuck? Save the video on your phone (or screen-record it) and drop the file above — here is <a href="' + location.origin + '/help.html" target="_blank" rel="noopener">how to save a video</a> — works on every platform.'
+    : (m2 ? 'Still stuck? Save the video on your phone (or screen-record it) and drop the file above — here is <a href="' + location.origin + '/help.html" target="_blank" rel="noopener">how to save a video</a>, or <a href="' + location.origin + '/apk/freesongfromreel-recorder.apk" download>get the Android app</a> that records and identifies in one tap.'
           : 'Double-check the link is public, then try again.');
   e.style.display='block';
 }
