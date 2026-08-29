@@ -122,6 +122,10 @@ footer a{color:#4a6cf7;text-decoration:none}
       <a href="help.html#x">X/Twitter</a> &middot;
       <a href="help.html#facebook">Facebook</a>
     </div>
+    <div class="tips" style="margin-top:8px">
+      <strong>📱 Android app:</strong> record the video right on your phone, then identify the song in one tap —
+      <a href="apk/freesongfromreel-recorder.apk" download id="apkLink">download Free Song Recorder (APK, free)</a>
+    </div>
   </div>
 
   <div class="card">
@@ -295,6 +299,9 @@ $('findBtn').addEventListener('click', async function(){
   }
 });
 $('url').addEventListener('keydown',function(e){ if(e.key==='Enter') $('findBtn').click(); });
+
+/* APK download tracking */
+$('apkLink').addEventListener('click', function(){ if(window.track) window.track('apk_download', {}); });
 
 /* ---- File drop / browse path (equivalent UI, uploads bytes instead of URL) ---- */
 var dropZone = $('dropZone'), fileInput = $('fileInput');
