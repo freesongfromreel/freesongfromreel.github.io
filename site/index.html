@@ -196,29 +196,6 @@ footer a{color:#4a6cf7;text-decoration:none}
 </div>
 </div>
 
-<!-- Cookie consent banner (self-hosted; GDPR/AdSense-friendly). Shows until
-     the visitor accepts. Store consent in localStorage so AdSense partners can
-     rely on it for EEA ad personalization. -->
-<div id="cookieBanner" style="display:none;position:fixed;left:0;right:0;bottom:0;background:#16213e;color:#eaf0ff;padding:12px 16px;font-size:.85rem;z-index:99;box-shadow:0 -2px 8px rgba(0,0,0,.2)">
-  <div style="max-width:720px;margin:0 auto;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-    <span>We use cookies to improve the tool and show relevant ads on this page (Google AdSense). By continuing you accept. <a href="privacy.html" style="color:#8fb3ff">Privacy policy</a></span>
-    <button id="cookieOk" style="background:#4a6cf7;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:.85rem;font-weight:600;cursor:pointer">Got it</button>
-  </div>
-</div>
-<script>
-(function () {
-  try {
-    if (localStorage.getItem("fsr_cookie_ok")) return;
-    var b = document.getElementById("cookieBanner");
-    b.style.display = "block";
-    document.getElementById("cookieOk").addEventListener("click", function () {
-      localStorage.setItem("fsr_cookie_ok", "1");
-      b.style.display = "none";
-    });
-  } catch (e) {}
-})();
-</script>
-
 <!-- Common kit: analytics (set data-ga to a real GA4 ID to enable; "" = off) -->
 <script src="common/track.js" data-ga="G-NMDXLM3Z2J"></script>
 
