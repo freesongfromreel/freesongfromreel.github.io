@@ -156,7 +156,49 @@ footer a{color:#4a6cf7;text-decoration:none}
     <p style="margin-top:4px"><a href="help.html">Help</a> &middot; <a href="about.html">About</a> &middot; <a href="privacy.html">Privacy</a> &middot; <a href="terms.html">Terms</a> &middot; <a href="contact.html">Contact</a></p>
   </div>
 </footer>
+
+<div class="container" style="margin-top:20px;padding-top:20px;border-top:1px solid #e3e8ef">
+  <h2 style="font-size:1.2rem;margin-bottom:10px">How it works</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+    <div style="background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="font-size:1.4rem">1️⃣</div>
+      <p style="font-size:.9rem;margin-top:6px"><strong>Paste the link</strong> to any Instagram Reel, TikTok, YouTube, X or Facebook video.</p>
+    </div>
+    <div style="background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="font-size:1.4rem">2️⃣</div>
+      <p style="font-size:.9rem;margin-top:6px"><strong>We read the audio</strong> from the post — even when the platform hides the track as “original audio”.</p>
+    </div>
+    <div style="background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="font-size:1.4rem">3️⃣</div>
+      <p style="font-size:.9rem;margin-top:6px"><strong>Get the song</strong> — title, artist and a Spotify link to play it instantly.</p>
+    </div>
+  </div>
+  <p style="font-size:.8rem;color:#888;margin-top:12px">Free, no login, no app required. Your link and the audio are read once and never stored.</p>
 </div>
+</div>
+
+<!-- Cookie consent banner (self-hosted; GDPR/AdSense-friendly). Shows until
+     the visitor accepts. Store consent in localStorage so AdSense partners can
+     rely on it for EEA ad personalization. -->
+<div id="cookieBanner" style="display:none;position:fixed;left:0;right:0;bottom:0;background:#16213e;color:#eaf0ff;padding:12px 16px;font-size:.85rem;z-index:99;box-shadow:0 -2px 8px rgba(0,0,0,.2)">
+  <div style="max-width:720px;margin:0 auto;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+    <span>We use cookies to improve the tool and show relevant ads on this page (Google AdSense). By continuing you accept. <a href="privacy.html" style="color:#8fb3ff">Privacy policy</a></span>
+    <button id="cookieOk" style="background:#4a6cf7;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:.85rem;font-weight:600;cursor:pointer">Got it</button>
+  </div>
+</div>
+<script>
+(function () {
+  try {
+    if (localStorage.getItem("fsr_cookie_ok")) return;
+    var b = document.getElementById("cookieBanner");
+    b.style.display = "block";
+    document.getElementById("cookieOk").addEventListener("click", function () {
+      localStorage.setItem("fsr_cookie_ok", "1");
+      b.style.display = "none";
+    });
+  } catch (e) {}
+})();
+</script>
 
 <!-- Common kit: analytics (set data-ga to a real GA4 ID to enable; "" = off) -->
 <script src="common/track.js" data-ga="G-NMDXLM3Z2J"></script>
