@@ -61,6 +61,8 @@ header p{font-size:clamp(.8rem,2vw,.95rem);opacity:.85}
 .result .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .result a{text-decoration:none;font-size:.85rem;font-weight:600;padding:8px 14px;border-radius:8px;background:#4a6cf7;color:#fff}
 .result a.ghost{background:#dfe4ff;color:#4a6cf7}
+.result .bmc{display:block;margin:16px 0 2px;padding:13px 16px;border-radius:10px;background:linear-gradient(135deg,#ffdd57,#f0b429);color:#5b3a00;font-weight:700;text-align:center;text-decoration:none;font-size:.95rem;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.result .bmc:hover{background:linear-gradient(135deg,#f0b429,#e6a700)}
 .error{background:#fdecea;color:#b3261e;border-radius:8px;padding:12px 14px;margin-top:10px;display:none;font-size:.9rem}
 .tips{background:#fef9ee;border-left:3px solid #f0b429;padding:12px 16px;border-radius:0 8px 8px 0;margin:12px 0;font-size:.85rem;line-height:1.6}
 .tips strong{color:#92400e}
@@ -114,6 +116,7 @@ footer a{color:#4a6cf7;text-decoration:none}
       <div class="artist" id="rArtist"></div>
       <img class="cover" id="rCover" alt="album cover" hidden>
       <div class="links" id="rLinks"></div>
+      <a class="bmc" id="bmcLink" href="https://buymeacoffee.com/afrowalkmanstudios" target="_blank" rel="noopener">☕ Enjoyed that? Buy me a coffee</a>
     </div>
   </div>
 
@@ -341,6 +344,9 @@ $('url').addEventListener('keydown',function(e){ if(e.key==='Enter') $('findBtn'
 
 /* APK download tracking */
 $('apkLink').addEventListener('click', function(){ if(window.track) window.track('apk_download', {}); });
+
+/* Buy-me-a-coffee tracking */
+$('bmcLink').addEventListener('click', function(){ if(window.track) window.track('bmc_click', {}); });
 
 /* ---- File drop / browse path (equivalent UI, uploads bytes instead of URL) ---- */
 var dropZone = $('dropZone'), fileInput = $('fileInput');
