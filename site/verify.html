@@ -43,8 +43,8 @@ footer a{color:#4a6cf7;text-decoration:none}
   </div>
 
   <div class="actions">
-    <a class="btn" href="index.html">↻ Not right — retry with a longer clip</a>
-    <a class="btn ghost" href="apk/freesongfromreel-recorder.apk" download>📱 Record it with the app</a>
+    <a class="btn" href="index.html" onclick="if(window.track)window.track('verify_retry_click',{})">↻ Not right — retry with a longer clip</a>
+    <a class="btn ghost" href="apk/freesongfromreel-recorder.apk" download onclick="if(window.track)window.track('verify_app_click',{})">📱 Record it with the app</a>
   </div>
   <a class="bmc" href="https://buymeacoffee.com/afrowalkmanstudios" target="_blank" rel="noopener">☕ Enjoyed that? Buy me a coffee</a>
   <p class="hint">Wrong track? Detection improves with a longer, cleaner slice of the audio — 15+ seconds
