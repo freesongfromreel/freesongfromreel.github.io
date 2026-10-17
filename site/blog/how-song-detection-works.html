@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Song Detection Works: Audio Fingerprinting, Not Metadata — Free Song from Reel</title>
+<meta name="description" content="Song recognition tools don't read captions or metadata — they analyse the sound itself using audio fingerprinting. A friendly explainer.">
+<link rel="canonical" href="https://freesongfromreel.github.io/blog/how-song-detection-works.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',-apple-system,sans-serif;background:#f6f8fa;color:#1a1a2e;margin:0;line-height:1.7}
+.container{max-width:720px;margin:0 auto;padding:30px 20px}
+h1{font-size:1.45rem;line-height:1.3}
+h2{font-size:1.1rem;margin-top:28px;padding-top:14px;border-top:1px solid #e4e8f5}
+a{color:#4a6cf7}
+code{background:#eef1ff;padding:1px 5px;border-radius:4px;font-size:.9em}
+footer{background:#1a1a2e;color:#aaa;text-align:center;padding:20px;font-size:.8rem;margin-top:20px}
+footer a{color:#4a6cf7}
+.meta{font-size:.8rem;color:#888;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>How Song Detection Works: Audio Fingerprinting, Not Metadata</h1>
+<p class="meta">October 2026 · Free Song from Reel</p>
+
+<p>People often assume tools like <a href="index.html">Free Song from Reel</a> read a video's caption, title or
+metadata to find the song. They don't. If they did, they'd fail on every reel labelled “original audio” — and that's
+exactly the case they're built for. Instead, they <strong>analyse the sound itself</strong> using a technique called
+audio fingerprinting.</p>
+
+<h2>1. Extract the audio</h2>
+<p>The first step is pulling the audio track out of the video file. For a pasted link, that means downloading the post's
+audio stream; for an uploaded file, decoding the video/audio container (mp4, mov, webm, mp3…). Either way the result is
+a raw audio signal — nothing about captions, likes or descriptions survives this step, because none of it was ever
+needed.</p>
+
+<h2>2. Turn the sound into a fingerprint</h2>
+<p>Raw audio is just a very long list of numbers measuring air pressure thousands of times per second. Comparing that
+directly against a catalogue of millions of songs would be impossibly slow, so recognition engines compress it into a
+<strong>fingerprint</strong>: a compact summary of the audio's distinctive moments — peaks, beats and frequency patterns
+at different moments in time.</p>
+<p>This is the same idea as a human fingerprint: two recordings of the same song produce near-identical fingerprints
+even if they were ripped at different volumes, from different sources, with background noise layered over them. The
+fingerprint ignores the parts that differ and keeps the parts that are unique to the song.</p>
+
+<h2>3. Search the catalogue</h2>
+<p>The fingerprint is looked up against the engine's database. A match returns the track: title, artist and — when the
+catalogue has them — streaming links to Spotify, Apple Music, Deezer or iTunes.</p>
+<p>No match happens when the fingerprint is too weak (too little audio, too much talking/noise over the music) or when
+the song simply isn't in the database (obscure remixes, live recordings, brand-new releases). That's why longer, cleaner
+audio matches more reliably, and why a “no match” is returned honestly instead of a guess.</p>
+
+<h2>Why this matters for “original audio” reels</h2>
+<p>Instagram's “original audio” label is metadata — and metadata is exactly what fingerprinting ignores. If the sound is
+in the file, the fingerprint can be computed from it, which is why a reel that shows <em>no track name at all</em> can
+still be identified. The tool listens to the reel the same way you do, only far more precisely.</p>
+
+<h2>Try it</h2>
+<p>Paste a reel link, upload a saved video, or record audio with the <a href="apk/freesongfromreel-recorder.apk"
+download>Android app</a> — the whole pipeline above runs in around 10–20 seconds.</p>
+
+<p style="margin-top:28px"><a href="blog/index.html">← All posts</a> · <a href="index.html">Try the tool</a></p>
+</div>
+<footer><p>Free Song from Reel — <a href="index.html">back to the tool</a> · <a href="blog/index.html">Blog</a></p></footer>
+<script src="common/track.js" data-ga="G-NMDXLM3Z2J"></script>
+</body>
+</html>

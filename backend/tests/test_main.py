@@ -2,7 +2,7 @@
 import pytest
 from fastapi.testclient import TestClient
 import main
-from main import app, _base_host, _spotify, _parse_shazam, ALLOWED_HOSTS, ALLOWED_EXT, MAX_UPLOAD
+from main import app, _base_host, _spotify, _stream_links, _parse_shazam, ALLOWED_HOSTS, ALLOWED_EXT, MAX_UPLOAD
 
 client = TestClient(app)
 
@@ -52,9 +52,26 @@ def test_detect_accepts_known_host_shape():
 
 def test_spotify_parses_provider_row():
     track = {"sections": [{"metadata": [{"title": "Other", "text": "nope"},
-                                        {"title": "Apple Music", "text": "https://itunes"},
+                                        {"title": "Apple Music", "text": "https://music.apple.com/us/album/1"},
                                         {"title": "Open in Spotify", "text": "https://open.spotify.com/track/1"}]}]}
     assert _spotify(track) == "https://open.spotify.com/track/1"
+
+
+def test_stream_links_collect_all_providers():
+    track = {"sections": [{"metadata": [
+        {"title": "Open in Spotify", "text": "https://open.spotify.com/track/1"},
+        {"title": "Apple Music", "text": "https://music.apple.com/us/album/1"},
+        {"title": "iTunes", "text": "https://itunes.apple.com/us/album/1"},
+        {"title": "Deezer", "text": "https://www.deezer.com/track/1"},
+        {"title": "Other", "text": "https://example.com/not-streaming"},
+    ]}]}
+    out = _stream_links(track)
+    assert out.get("spotify") == "https://open.spotify.com/track/1"
+    assert out.get("apple") == "https://music.apple.com/us/album/1"
+    assert out.get("itunes") == "https://itunes.apple.com/us/album/1"
+    assert out.get("deezer") == "https://www.deezer.com/track/1"
+    assert "example.com" not in " ".join(out.values())
+    assert _stream_links(None) == {} and _stream_links({}) == {}
 
 
 def test_spotify_none_when_absent():

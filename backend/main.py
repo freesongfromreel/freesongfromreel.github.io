@@ -60,6 +60,7 @@ def _parse_shazam(res: dict) -> dict:
         "artist": artist,
         "cover": cover,
         "spotify": _spotify(track),
+        "links": _stream_links(track),
     }
 
 
@@ -142,15 +143,34 @@ def _download_audio(url: str, work: Path):
 
 
 def _spotify(track: dict):
-    """Pull a public streaming URL from shazamio's track data if present."""
+    """Back-compat: the Spotify row from shazamio's metadata, if present."""
+    return (_stream_links(track) or {}).get("spotify")
+
+
+def _stream_links(track: dict) -> dict:
+    """Collect every streaming provider row shazamio attached to a track.
+
+    Rows look like {"title": "Open in Spotify", "text": "https://..."}. Returns
+    a {provider: url} dict with keys spotify/apple/deezer/itunes when present.
+    """
+    out = {}
     if not track:
-        return None
+        return out
     for section in track.get("sections") or []:
         for meta in section.get("metadata") or []:
             title = (meta.get("title") or "").lower()
-            if "spotify" in title or "open.spotify" in str(meta.get("text", "")):
-                return meta.get("text") or meta.get("url")
-    return None
+            text = str(meta.get("text") or meta.get("url") or "")
+            if not text.startswith("http"):
+                continue
+            if "spotify" in title or "open.spotify" in text:
+                out.setdefault("spotify", text)
+            elif "apple music" in title or "music.apple" in text:
+                out.setdefault("apple", text)
+            elif "itunes" in title or "itunes.apple" in text:
+                out.setdefault("itunes", text)
+            elif "deezer" in title or "deezer" in text:
+                out.setdefault("deezer", text)
+    return out
 
 
 @app.post("/api/detect")
