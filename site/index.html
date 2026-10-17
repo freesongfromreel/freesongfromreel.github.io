@@ -364,7 +364,6 @@ $('findBtn').addEventListener('click', async function(){
     if(window.track) window.track('search_success', {platform:platform});
     showResult(json);
   }catch(e){
-    if(window.track) window.track('search_error', {platform:platform, message:(e.message||'').slice(0,80)});
     showErr(e.message||'Network error. Is the detection server running?', platform);
   }finally{
     this.disabled=false; setStatus(''); setLoading(false);
@@ -410,7 +409,6 @@ async function detectFile(file){
     if(window.track) window.track('search_success', {platform:'file'});
     showResult(json);
   }catch(e){
-    if(window.track) window.track('search_error', {platform:'file', message:(e.message||'').slice(0,80)});
     showErr(e.message || 'Upload failed. Is the detection server running?', 'file');
   }finally{
     btn.disabled=false; setStatus(''); setLoading(false);
