@@ -176,13 +176,20 @@ def _stream_links(track: dict) -> dict:
                     out.setdefault("deezer", uri)
                 break  # first usable action per provider is enough
 
-    # Apple sometimes only appears as hub.actions[] (play/id + preview uri)
-    if "apple" not in out:
-        for action in hub.get("actions") or []:
-            uri = action.get("uri") or ""
-            if uri.startswith("http") and "apple" in str(action.get("name", "")).lower():
-                out.setdefault("apple", uri)
-                break
+    # Apple: hub.actions[] carries the play/id + a raw audio preview. The raw
+    # m4a is NOT a page — expose a real Apple Music URL (song/<adamid>) when the
+    # id is present, and stash the preview separately for the verify player.
+    for action in hub.get("actions") or []:
+        name = str(action.get("name", "")).lower()
+        uri = action.get("uri") or ""
+        if name == "apple" and action.get("type") == "applemusicplay" and action.get("id"):
+            out.setdefault("apple", "https://music.apple.com/us/song/{0}".format(action["id"]))
+        elif name == "apple" and uri.startswith("https://audio-ssl.itunes.apple.com"):
+            out.setdefault("preview", uri)
+    if "preview" in out and "apple" not in out and "albumadamid" in track:
+        adam = str(track.get("albumadamid") or "")
+        if adam:
+            out.setdefault("apple", "https://music.apple.com/us/album/{0}".format(adam))
 
     # Legacy shape: sections[].metadata rows (older shazamio versions)
     for section in track.get("sections") or []:

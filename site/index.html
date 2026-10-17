@@ -334,9 +334,11 @@ function showResult(json){
     if(ln[p[0]]){ links+='<a target="_blank" rel="noopener" href="'+ln[p[0]]+'">'+p[1]+'</a>'; }
   });
   var sid = spotifyId(ln.spotify);
-  if(sid){
-    var q = 'track='+sid+'&title='+encodeURIComponent(json.title||'')+'&artist='+encodeURIComponent(json.artist||'');
+  var preview = ln.preview || '';
+  if(sid || preview){
+    var q = 'title='+encodeURIComponent(json.title||'')+'&artist='+encodeURIComponent(json.artist||'');
     if(json.cover) q += '&cover='+encodeURIComponent(json.cover);
+    q += sid ? '&track='+sid : '&preview='+encodeURIComponent(preview);
     links += '<a class="ghost" href="verify.html?'+q+'" data-track="sample_click">▶ Play a sample</a>';
   }
   if(json.cover){ $('rCover').src=json.cover; $('rCover').hidden=false; }

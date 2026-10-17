@@ -55,7 +55,8 @@ footer a{color:#4a6cf7;text-decoration:none}
   <a class="bmc" href="https://buymeacoffee.com/afrowalkmanstudios" target="_blank" rel="noopener">☕ Enjoyed that? Buy me a coffee</a>
   <p class="hint">Wrong track? Detection improves with a longer, cleaner slice of the audio — 15+ seconds
     makes a match far more reliable. Re-paste a longer clip on the main page, or <strong>record the video with the
-    Android app</strong> (records the exact audio you hear, even when the share link is cut short) and identify in one tap.</p>
+    Android app</strong> (records the exact audio you hear, even when the share link is cut short) and identify in one tap.
+    Preview comes from Spotify or Apple Music.</p>
 </div>
 
 <footer><p>Free Song from Reel — <a href="index.html">back to the tool</a></p></footer>
@@ -64,9 +65,10 @@ footer a{color:#4a6cf7;text-decoration:none}
 (function () {
   var p = new URLSearchParams(location.search);
   var id = p.get('track');
+  var preview = p.get('preview') || '';
   if (!id || !/^[A-Za-z0-9]+$/.test(id)) {
-    location.replace('index.html'); // no usable track id -> drop back to the tool
-    return;
+    if (!preview) { location.replace('index.html'); return; } // nothing usable
+    id = null; // Apple-preview sample: no Spotify embed, use audio player
   }
   var title = p.get('title') || 'Unknown track';
   var artist = p.get('artist') || '';
@@ -75,9 +77,13 @@ footer a{color:#4a6cf7;text-decoration:none}
   document.getElementById('artist').textContent = artist;
   if (cover) { var c = document.getElementById('cover'); c.src = cover; c.hidden = false; }
   document.title = title + (artist ? ' — ' + artist : '') + ' — Free Song from Reel';
-  document.getElementById('embed').src =
-    'https://open.spotify.com/embed/track/' + id + '?utm_source=generator&theme=0';
-  if (window.track) window.track('verify_view', { track: id });
+  var player = document.getElementById('embed');
+  if (id) {
+    player.src = 'https://open.spotify.com/embed/track/' + id + '?utm_source=generator&theme=0';
+  } else {
+    player.outerHTML = '<audio id="embed" controls autoplay style="width:100%" src="' + preview + '"></audio>';
+  }
+  if (window.track) window.track('verify_view', { track: id || preview.slice(0, 60) });
 })();
 </script>
 </body>

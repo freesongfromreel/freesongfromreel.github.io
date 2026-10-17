@@ -76,6 +76,7 @@ def test_stream_links_collect_all_providers():
 
 def test_stream_links_modern_hub_providers_shape():
     track = {"hub": {"type": "APPLEMUSIC", "actions": [
+                    {"name": "apple", "type": "applemusicplay", "id": "1478190057"},
                     {"name": "apple", "type": "uri",
                      "uri": "https://audio-ssl.itunes.apple.com/preview.m4a"}],
         "providers": [
@@ -91,9 +92,29 @@ def test_stream_links_modern_hub_providers_shape():
         ]}}
     out = _stream_links(track)
     assert out.get("spotify") == "spotify:search:Ransom Lil Tecca"
-    assert out.get("apple") == "https://audio-ssl.itunes.apple.com/preview.m4a"
+    assert out.get("apple") == "https://music.apple.com/us/song/1478190057"
     assert out.get("deezer") == "https://www.deezer.com/track/1"
     assert out.get("youtube") == "https://music.youtube.com/search?q=Ransom"
+    assert out.get("preview") == "https://audio-ssl.itunes.apple.com/preview.m4a"
+
+
+def test_stream_links_apple_falls_back_to_album_id():
+    track = {"hub": {"actions": [
+                    {"name": "apple", "type": "uri",
+                     "uri": "https://audio-ssl.itunes.apple.com/preview.m4a"}]},
+            "albumadamid": "1478190057"}
+    out = _stream_links(track)
+    assert out.get("apple") == "https://music.apple.com/us/album/1478190057"
+    assert out.get("preview") == "https://audio-ssl.itunes.apple.com/preview.m4a"
+
+
+def test_stream_links_never_leaks_raw_preview_as_apple_page():
+    track = {"hub": {"actions": [
+                    {"name": "apple", "type": "uri",
+                     "uri": "https://audio-ssl.itunes.apple.com/preview.m4a"}]}}
+    out = _stream_links(track)
+    assert out.get("preview") == "https://audio-ssl.itunes.apple.com/preview.m4a"
+    assert not out.get("apple", "").startswith("https://audio-ssl")
 
 
 def test_spotify_none_when_absent():
