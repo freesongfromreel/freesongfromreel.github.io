@@ -69,9 +69,15 @@ header p{font-size:clamp(.8rem,2vw,.95rem);opacity:.85}
 .pill{display:inline-block;background:#eef1ff;color:#4a6cf7;border-radius:14px;padding:3px 10px;font-size:.75rem;font-weight:600;margin:2px}
 footer{background:#1a1a2e;color:#aaa;text-align:center;padding:20px 16px;font-size:.8rem;margin-top:auto}
 footer a{color:#4a6cf7;text-decoration:none}
+.topnav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;background:#1a1a2e;color:#fff;padding:10px 20px;font-size:.9rem}
+.topnav a{color:#fff;text-decoration:none;font-weight:600}
+.topnav .navlinks{display:flex;gap:14px;flex-wrap:wrap}
+.topnav .navlinks a{color:#cbd5ff;font-weight:400}
+.topnav .navlinks a:hover{color:#fff}
 </style>
 </head>
 <body>
+<nav class="topnav"><a href="index.html" class="brand">🎵 Free Song from Reel</a><div class="navlinks"><a href="index.html">Home</a><a href="blog/index.html">Blog</a><a href="help.html">Help</a><a href="about.html">About</a><a href="contact.html">Contact</a></div></nav>
 
 <div id="app">
 <header>
@@ -207,7 +213,7 @@ footer a{color:#4a6cf7;text-decoration:none}
 </div>
 
 <!-- Common kit: analytics (set data-ga to a real GA4 ID to enable; "" = off) -->
-<script src="common/track.js" data-ga="G-NMDXLM3Z2J"></script>
+<script src="common/track.js" data-capture="1" data-ga="G-NMDXLM3Z2J"></script>
 
 <!-- Common kit: demanded-capture widget (set DATA_EMAIL in common/waitlist.html) -->
 <div class="waitlist" style="max-width:720px;margin:0 auto;padding:0 16px 20px">
@@ -324,14 +330,14 @@ function spotifyId(url){
 function showResult(json){
   var links='';
   var ln = json.links || (json.spotify ? {spotify: json.spotify} : {});
-  [['spotify','Spotify ▶'],['apple','Apple Music ▶'],['deezer','Deezer ▶'],['itunes','iTunes ▶']].forEach(function(p){
+  [['spotify','Spotify ▶'],['apple','Apple Music ▶'],['deezer','Deezer ▶'],['youtube','YouTube Music ▶'],['itunes','iTunes ▶']].forEach(function(p){
     if(ln[p[0]]){ links+='<a target="_blank" rel="noopener" href="'+ln[p[0]]+'">'+p[1]+'</a>'; }
   });
   var sid = spotifyId(ln.spotify);
   if(sid){
     var q = 'track='+sid+'&title='+encodeURIComponent(json.title||'')+'&artist='+encodeURIComponent(json.artist||'');
     if(json.cover) q += '&cover='+encodeURIComponent(json.cover);
-    links += '<a class="ghost" href="verify.html?'+q+'" onclick="if(window.track)window.track(\'sample_click\',{})">▶ Play a sample</a>';
+    links += '<a class="ghost" href="verify.html?'+q+'" data-track="sample_click">▶ Play a sample</a>';
   }
   if(json.cover){ $('rCover').src=json.cover; $('rCover').hidden=false; }
   $('rLinks').innerHTML = links || '<span class="help-text">No streaming link returned for this one.</span>';
@@ -366,27 +372,14 @@ $('url').addEventListener('keydown',function(e){ if(e.key==='Enter') $('findBtn'
 
 /* Example reel: pre-fill a public reel and run it (demo + first-run nudge) */
 $('exampleBtn').addEventListener('click', function(){
-  $('url').value = 'https://www.instagram.com/reel/DcPd0UQu2hS/';
+  $('url').value = 'https://www.instagram.com/reels/DMZW-LDP9rc/';
   if(window.track) window.track('example_reel_click', {});
   $('findBtn').click();
 });
 
-/* APK download tracking */
-$('apkLink').addEventListener('click', function(){ if(window.track) window.track('apk_download', {}); });
-
-/* Buy-me-a-coffee tracking */
-$('bmcLink').addEventListener('click', function(){ if(window.track) window.track('bmc_click', {}); });
-
-/* Delegated tracking for dynamically-injected links: error-tip APK links and
-   the "try again" retry button (both created in showErr()). Explicit listeners
-   above already cover #apkLink/#bmcLink — skip them to avoid double counts. */
-document.addEventListener('click', function(e){
-  var a = e.target && e.target.closest ? e.target.closest('a') : null;
-  if (!a || a.id === 'apkLink' || a.id === 'bmcLink') return;
-  var href = a.getAttribute('href') || '';
-  if (/\.apk/.test(href)) { if(window.track) window.track('apk_click', {}); return; }
-  if (a.classList.contains('retry')) { if(window.track) window.track('retry_click', {}); }
-});
+/* APK download tracking — handled by the track.js click catcher (data-capture)
+   which maps any *.apk/[download] link to apk_click, BMC links to bmc_click,
+   and the inline retry button to retry_click. */
 
 /* ---- File drop / browse path (equivalent UI, uploads bytes instead of URL) ---- */
 var dropZone = $('dropZone'), fileInput = $('fileInput');

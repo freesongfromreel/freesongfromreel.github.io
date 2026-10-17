@@ -54,4 +54,31 @@
   onReady(function () {
     if (enabled) window.track("page_view");
   });
+
+  /* Optional delegated click catcher for links/CTAs: enable per-page with
+     data-capture="1" on this script tag. Fires a semantic event per click and
+     skips elements with an inline onclick (explicit handlers win).
+     Events: nav_click, blog_post_click, sample_click, retry_click, apk_click,
+     bmc_click, anchor_click, link_click, plus any data-track="name" override. */
+  var CAPTURE = /(?:^|\s)data-capture=/.test(script.outerHTML) || script.getAttribute("data-capture") === "1";
+  if (CAPTURE) {
+    document.addEventListener("click", function (ev) {
+      var t = ev.target;
+      var a = t && t.closest ? t.closest("a") : null;
+      if (!a || !window.track) return;
+      if (a.getAttribute("onclick")) return; // explicit inline tracking wins
+      var href = a.getAttribute("href") || "";
+      var label = (a.getAttribute("aria-label") || a.textContent || "").trim().slice(0, 40) || href;
+      var dt = a.getAttribute("data-track");
+      if (dt) { window.track(dt, { label: label, dest: href }); return; }
+      if (a.closest(".navlinks")) { window.track("nav_click", { dest: href, page: location.pathname }); return; }
+      if (a.classList.contains("card")) { window.track("blog_post_click", { post: href }); return; }
+      if (a.classList.contains("retry")) { window.track("retry_click", {}); return; }
+      if (/\?track=/.test(href) || /verify\.html/.test(href)) { window.track("sample_click", {}); return; }
+      if (/\.apk/.test(href) || a.hasAttribute("download")) { window.track("apk_click", {}); return; }
+      if (/buymeacoffee/.test(href)) { window.track("bmc_click", {}); return; }
+      if (/^#/.test(href)) { window.track("anchor_click", { dest: href }); return; }
+      window.track("link_click", { dest: href, page: location.pathname });
+    });
+  }
 })();

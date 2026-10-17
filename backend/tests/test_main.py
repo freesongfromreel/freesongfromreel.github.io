@@ -74,6 +74,28 @@ def test_stream_links_collect_all_providers():
     assert _stream_links(None) == {} and _stream_links({}) == {}
 
 
+def test_stream_links_modern_hub_providers_shape():
+    track = {"hub": {"type": "APPLEMUSIC", "actions": [
+                    {"name": "apple", "type": "uri",
+                     "uri": "https://audio-ssl.itunes.apple.com/preview.m4a"}],
+        "providers": [
+            {"caption": "Open in Spotify", "type": "SPOTIFY",
+             "actions": [{"name": "hub:spotify:searchdeeplink", "type": "uri",
+                          "uri": "spotify:search:Ransom Lil Tecca"}]},
+            {"caption": "Open in YouTube Music", "type": "YOUTUBEMUSIC",
+             "actions": [{"name": "hub:youtubemusic:androiddeeplink", "type": "uri",
+                          "uri": "https://music.youtube.com/search?q=Ransom"}]},
+            {"caption": "Open in Deezer", "type": "DEEZER",
+             "actions": [{"name": "hub:deezer", "type": "uri",
+                          "uri": "https://www.deezer.com/track/1"}]},
+        ]}}
+    out = _stream_links(track)
+    assert out.get("spotify") == "spotify:search:Ransom Lil Tecca"
+    assert out.get("apple") == "https://audio-ssl.itunes.apple.com/preview.m4a"
+    assert out.get("deezer") == "https://www.deezer.com/track/1"
+    assert out.get("youtube") == "https://music.youtube.com/search?q=Ransom"
+
+
 def test_spotify_none_when_absent():
     assert _spotify({}) is None
 

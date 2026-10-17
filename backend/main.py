@@ -148,14 +148,43 @@ def _spotify(track: dict):
 
 
 def _stream_links(track: dict) -> dict:
-    """Collect every streaming provider row shazamio attached to a track.
+    """Collect every streaming provider link shazamio attached to a track.
 
-    Rows look like {"title": "Open in Spotify", "text": "https://..."}. Returns
-    a {provider: url} dict with keys spotify/apple/deezer/itunes when present.
+    Primary source is track.hub.providers (caption/type + action uri), which is
+    what modern Shazam API responses carry; falls back to the older
+    sections[].metadata rows. Returns {provider: url} with keys
+    spotify/apple/deezer/youtube when present.
     """
     out = {}
     if not track:
         return out
+
+    # Modern shape: track.hub.providers[].actions[].uri
+    hub = track.get("hub") or {}
+    for prov in hub.get("providers") or []:
+        key = (prov.get("type") or prov.get("caption") or "").lower()
+        for action in prov.get("actions") or []:
+            uri = action.get("uri") or ""
+            if uri.startswith(("http", "spotify:", "itunes:")):
+                if "spotify" in key:
+                    out.setdefault("spotify", uri)
+                elif "applemusic" in key or "apple music" in key:
+                    out.setdefault("apple", uri)
+                elif "youtubemusic" in key or "youtube music" in key:
+                    out.setdefault("youtube", uri)
+                elif "deezer" in key:
+                    out.setdefault("deezer", uri)
+                break  # first usable action per provider is enough
+
+    # Apple sometimes only appears as hub.actions[] (play/id + preview uri)
+    if "apple" not in out:
+        for action in hub.get("actions") or []:
+            uri = action.get("uri") or ""
+            if uri.startswith("http") and "apple" in str(action.get("name", "")).lower():
+                out.setdefault("apple", uri)
+                break
+
+    # Legacy shape: sections[].metadata rows (older shazamio versions)
     for section in track.get("sections") or []:
         for meta in section.get("metadata") or []:
             title = (meta.get("title") or "").lower()

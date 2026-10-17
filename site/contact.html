@@ -23,9 +23,15 @@ label{font-size:.85rem;font-weight:600;color:#444;display:block;margin-top:14px}
 .msg.err{color:#b3261e}
 footer{background:#1a1a2e;color:#aaa;text-align:center;padding:20px;font-size:.8rem;margin-top:20px}
 footer a{color:#4a6cf7}
+.topnav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;background:#1a1a2e;color:#fff;padding:10px 20px;font-size:.9rem}
+.topnav a{color:#fff;text-decoration:none;font-weight:600}
+.topnav .navlinks{display:flex;gap:14px;flex-wrap:wrap}
+.topnav .navlinks a{color:#cbd5ff;font-weight:400}
+.topnav .navlinks a:hover{color:#fff}
 </style>
 </head>
 <body>
+<nav class="topnav"><a href="index.html" class="brand">🎵 Free Song from Reel</a><div class="navlinks"><a href="index.html">Home</a><a href="blog/index.html">Blog</a><a href="help.html">Help</a><a href="about.html">About</a><a href="contact.html">Contact</a></div></nav>
 <div class="container">
 <h1>Contact</h1>
 <p>Have a question, a bug to report, or a song the tool couldn't find? Send us a message and we'll get back to you.</p>
@@ -82,6 +88,6 @@ footer a{color:#4a6cf7}
   });
 })();
 </script>
-<script src="common/track.js" data-ga="G-NMDXLM3Z2J"></script>
+<script src="common/track.js" data-capture="1" data-ga="G-NMDXLM3Z2J"></script>
 </body>
 </html>
