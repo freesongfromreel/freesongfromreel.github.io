@@ -294,9 +294,17 @@ function setLoading(on,label){
   $('loading').hidden = !on;
   if(label) $('loadingLabel').textContent = label;
 }
+function errType(m){
+  if(/bot-check|blocked/i.test(m||'')) return 'blocked';
+  if(/no match|identif|results/i.test(m||'')) return 'no_match';
+  if(/no audio|decode/i.test(m||'')) return 'no_audio';
+  if(/network|server|timed? ?out/i.test(m||'')) return 'server';
+  if(/unsupported platform|invalid|http/i.test(m||'')) return 'invalid';
+  return 'other';
+}
 function showErr(m, platform){
   var e=$('error'); e.textContent=m;
-  if(platform) window.track&&window.track('search_error',{platform:platform,message:(m||'').slice(0,80)});
+  if(platform) window.track&&window.track('search_error',{platform:platform,type:errType(m),message:(m||'').slice(0,80)});
   // "try again" retry inline below the message
   var retry=e.querySelector('.retry');
   if(!retry){
