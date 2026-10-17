@@ -7,7 +7,8 @@ import re
 import sys
 
 SITE = Path(__file__).resolve().parents[1]
-PAGES = ["index.html", "help.html", "about.html", "privacy.html", "terms.html", "contact.html"]
+PAGES = ["index.html", "verify.html", "help.html", "about.html", "privacy.html", "terms.html", "contact.html"]
+FOOTER_PAGES = [p for p in PAGES if p not in ("index.html", "verify.html")]
 
 
 def _read(name: str) -> str:
@@ -44,6 +45,5 @@ def test_index_js_has_no_syntax_redflags():
 
 def test_footer_links_resolve():
     html = _read("index.html")
-    for target in PAGES:
-        if target != "index.html":
-            assert f'href="{target}"' in html, f"footer should link {target}"
+    for target in FOOTER_PAGES:
+        assert f'href="{target}"' in html, f"footer should link {target}"
