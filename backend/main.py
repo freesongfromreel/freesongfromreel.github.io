@@ -65,31 +65,99 @@ def _parse_shazam(res: dict) -> dict:
 
 
 async def _recognize(audio_bytes: bytes) -> dict:
-    """Fingerprint raw audio bytes via Shazam. Shared by URL + file paths."""
+    """Fingerprint raw audio bytes via Shazam. Shared by URL + file paths.
+
+    Retries twice in the face of a transient empty API response (Shazam
+    occasionally answers {track: null}). Raises HTTPException(404) on a
+    genuine no-match.
+    """
     from shazamio import Shazam
-    res = await Shazam().recognize(audio_bytes)
+    res = None
+    for _ in range(2):
+        res = await Shazam().recognize(audio_bytes)
+        if (res or {}).get("track") or (res or {}).get("matches"):
+            break
     return _parse_shazam(res)
+
+
+async def _recognize_wav(wav: Path, work: Path) -> dict:
+    """Recognize a wav file; on no-match, retry a mid-video window.
+
+    Videos often open with talking/quiet before the music, or the track ends
+    mid-clip. Slicing 25% in for ~30s sidesteps that and materially lifts the
+    match rate. Raises HTTPException(404) when both attempts miss.
+    """
+    from shazamio import Shazam
+    try:
+        res = await Shazam().recognize(wav.read_bytes())
+        if (res or {}).get("track") or (res or {}).get("matches"):
+            return _parse_shazam(res)
+    except HTTPException:
+        pass  # fall through to window retry
+    start, dur = _segment_plan(_duration(wav))
+    if start <= 0:
+        raise HTTPException(404, "could not identify the song (0 results)")
+    seg = _to_wav(wav, work / "seg.wav", start=start, dur=dur)
+    if not seg:
+        raise HTTPException(404, "could not identify the song (0 results)")
+    res = await Shazam().recognize(seg.read_bytes())
+    return _parse_shazam(res)
+
+
+def _segment_plan(duration: float) -> tuple:
+    """Window for the recognition retry: start ~25% in, take up to 30s.
+
+    Falls back to (0, duration) when the clip is too short to skip anything.
+    """
+    start = max(0.0, round(duration * 0.25, 1))
+    if duration - start >= 12:
+        return start, round(min(30.0, duration - start), 1)
+    return 0.0, duration
+
+
+def _duration(path: Path) -> float:
+    """Seconds of media via ffmpeg's stderr line (no ffprobe dependency)."""
+    try:
+        r = subprocess.run([_ffmpeg(), "-hide_banner", "-i", str(path)],
+                           capture_output=True, timeout=60)
+        m = re.search(r"Duration: (\d+):(\d+):(\d+(?:\.\d+)?)", r.stderr.decode("utf-8", "ignore"))
+        if m:
+            h, mi, s = m.groups()
+            return int(h) * 3600 + int(mi) * 60 + float(s)
+    except Exception:
+        pass
+    return 0.0
+
+
+def _ffmpeg() -> str:
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return "ffmpeg"
+
+
+def _to_wav(src: Path, out: Path, start: float = None, dur: float = None) -> Path:
+    """Transcode to mono 16kHz wav; optional -ss/-t window slice."""
+    args = [_ffmpeg(), "-y", "-i", str(src)]
+    if start is not None:
+        args += ["-ss", str(start)]
+    if dur is not None:
+        args += ["-t", str(dur)]
+    args += ["-vn", "-ac", "1", "-ar", "16000", str(out)]
+    try:
+        subprocess.run(args, capture_output=True, timeout=120)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        pass
+    return out if out.exists() else None
 
 
 def _extract_audio(data: bytes, work: Path) -> Path:
     """Decode any uploaded video/audio bytes to a mono 16kHz wav via ffmpeg."""
     src = work / "upload.bin"
     src.write_bytes(data)
-    out = work / "audio.wav"
-    try:
-        ff = "ffmpeg"
-        try:
-            import imageio_ffmpeg
-            ff = imageio_ffmpeg.get_ffmpeg_exe()
-        except Exception:
-            pass
-        subprocess.run(
-            [ff, "-y", "-i", str(src), "-vn", "-ac", "1", "-ar", "16000", str(out)],
-            capture_output=True, timeout=120,
-        )
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        pass  # fall through to existence check
-    if not out.exists():
+    out = _to_wav(src, work / "audio.wav")
+    if not out:
         raise HTTPException(422, "could not decode audio from that file — is it a video/audio file?")
     return out
 
@@ -100,7 +168,10 @@ async def _detect(url: str) -> dict:
         audio = _download_audio(url, work)
         if not audio:
             raise HTTPException(422, "no audio track found in that post")
-        res = await _recognize(audio.read_bytes())
+        wav = _to_wav(audio, work / "audio.wav")
+        if not wav:
+            raise HTTPException(422, "no audio track found in that post")
+        res = await _recognize_wav(wav, work)
         res["source"] = _base_host(url)
         return res
     finally:

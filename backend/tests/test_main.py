@@ -2,7 +2,7 @@
 import pytest
 from fastapi.testclient import TestClient
 import main
-from main import app, _base_host, _spotify, _stream_links, _parse_shazam, ALLOWED_HOSTS, ALLOWED_EXT, MAX_UPLOAD
+from main import app, _base_host, _spotify, _stream_links, _parse_shazam, _segment_plan, ALLOWED_HOSTS, ALLOWED_EXT, MAX_UPLOAD
 
 client = TestClient(app)
 
@@ -136,6 +136,17 @@ def test_parse_shazam_extracts_track_and_links():
     assert out["artist"] == "Artist"
     assert out["cover"] == "http://img"
     assert out["spotify"] == "https://open.spotify.com/track/1"
+
+
+def test_segment_plan_windows():
+    # long clip: start 25% in, cap window at 30s
+    assert _segment_plan(120.0) == (30.0, 30.0)
+    assert _segment_plan(40.0) == (10.0, 30.0)
+    # just-long-enough: window shrinks to fit
+    assert _segment_plan(45.0) == (11.2, 30.0)
+    # too short to skip: whole clip
+    assert _segment_plan(10.0) == (0.0, 10.0)
+    assert _segment_plan(0.0) == (0.0, 0.0)
 
 
 def test_detect_file_rejects_bad_ext():
